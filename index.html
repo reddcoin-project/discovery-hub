@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReddCoin Discovery Hub - The Social Currency</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom Font Import - Using a clean sans-serif */
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #FDFBF7; /* Warm Neutral Background */
+            color: #2D3748;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F1F1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E0;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A0AEC0;
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse-btn {
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(229, 62, 62, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); }
+        }
+
+        /* Chart Container Styling - STRICT ADHERENCE TO PROMPT */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%; /* Parent controls width */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+        }
+        
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Custom Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #E53E3E;
+            cursor: pointer;
+            margin-top: -8px; 
+            box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d; 
+        }
+        
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8.4px;
+            cursor: pointer;
+            background: #FED7D7;
+            border-radius: 1.3px;
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals (Background: #FDFBF7) with ReddCoin Red (#E53E3E) and Orange (#ED8936) accents. -->
+    <!-- Application Structure Plan:
+         1. Header: Persistent Wallet Balance & Brand.
+         2. Hero/Faucet: The "Click-to-Earn" game mechanics. High interaction.
+         3. Dashboard: Live visualizations of earnings (Line Chart) and Fee Comparisons (Bar Chart).
+         4. Learning Path: Unlockable content cards based on user interaction (Gamification).
+         5. Community: Privacy manifesto and social links.
+         WHY: This structure hooks the user with immediate reward (the faucet), visuals the value (charts), and then deepens knowledge (cards).
+    -->
+    <!-- Visualization & Content Choices:
+         1. Earnings Velocity (Line Chart): Shows real-time growth. Goal: Motivate.
+         2. The "True Cost" (Bar Chart): Compares RDD fees to PayPal/BTC. Goal: Educate on efficiency.
+         3. Particle System (Canvas): Visual reward for clicking. Goal: Engagement.
+         4. NO SVG/Mermaid used. All visuals are CSS or Chart.js.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- NAVIGATION / HEADER -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center gap-2">
+                        <!-- CSS/Unicode Logo Representation -->
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold text-lg shadow-md">R</div>
+                        <span class="font-bold text-xl tracking-tight text-gray-800">ReddCoin<span class="font-light text-gray-500">Hub</span></span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="hidden md:flex flex-col text-right">
+                        <span class="text-xs text-gray-500 uppercase tracking-wide">Wallet Balance</span>
+                        <span class="font-bold text-red-600 text-lg" id="nav-balance">0.00 RDD</span>
+                    </div>
+                    <button onclick="scrollToSection('wallet-section')" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        My Wallet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-12">
+
+        <!-- INTRO & FAUCET SECTION -->
+        <section id="faucet-section" class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            
+            <!-- Left: Text Context -->
+            <div class="space-y-6 fade-in">
+                <div class="inline-block px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold tracking-wide uppercase">
+                    New to Crypto? Start Here.
+                </div>
+                <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 leading-tight">
+                    Experience the <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-500">Social Currency.</span>
+                </h1>
+                <p class="text-lg text-gray-600 max-w-lg">
+                    ReddCoin (RDD) is digital cash dedicated to social networking. It's fast, free to send, and eco-friendly. 
+                    <br><br>
+                    <strong>Try it now:</strong> Tap the coin to simulate "Staking" and claim your first free RDD drops.
+                </p>
+                <div class="flex flex-wrap gap-4">
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> No Data Mining
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> No Ads
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> 100% Community
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: The Faucet Interaction -->
+            <div class="relative flex flex-col items-center justify-center bg-white rounded-2xl shadow-xl p-8 border border-gray-100 fade-in">
+                <!-- Particle Canvas Layer -->
+                <canvas id="particleCanvas" class="absolute inset-0 pointer-events-none w-full h-full rounded-2xl z-20"></canvas>
+                
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Social Staking Simulator</h3>
+                <p class="text-sm text-gray-500 mb-8 text-center">Click to validate the network & earn rewards.</p>
+                
+                <!-- The Big Button -->
+                <button id="claim-btn" class="group relative w-48 h-48 rounded-full bg-gradient-to-br from-red-500 to-orange-600 shadow-lg flex flex-col items-center justify-center transform transition-transform active:scale-95 pulse-btn z-10 hover:shadow-2xl">
+                    <div class="text-6xl text-white mb-2 group-hover:-translate-y-1 transition-transform">🪙</div>
+                    <span class="text-white font-bold text-lg tracking-wider">CLAIM</span>
+                    <span class="text-red-100 text-xs mt-1">Tap me!</span>
+                </button>
+
+                <div class="mt-8 w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+                    <div id="level-progress" class="bg-green-500 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between w-full mt-2 text-xs font-semibold text-gray-500">
+                    <span>Novice</span>
+                    <span id="next-rank">Next Rank: ReddHead</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- LIVE DATA DASHBOARD SECTION -->
+        <section id="dashboard" class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Your Wallet Growth</h2>
+                <p class="text-gray-500 mt-2">
+                    Visualizing your accumulation in real-time. In the real ReddCoin wallet, this happens through "Proof of Stake Velocity" (PoSV) - you earn by holding and being active, without wasting electricity.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Session Chart -->
+                <div class="lg:col-span-2 flex flex-col">
+                    <div class="chart-container bg-gray-50 rounded-lg border border-gray-100 p-2">
+                        <canvas id="earningsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="flex flex-col space-y-4 justify-center">
+                    <div class="bg-red-50 p-6 rounded-xl border border-red-100">
+                        <div class="text-red-600 text-sm font-bold uppercase tracking-wide">Current Balance</div>
+                        <div class="text-4xl font-extrabold text-gray-800 mt-2" id="display-balance">0.00</div>
+                        <div class="text-gray-500 text-sm mt-1">RDD (ReddCoin)</div>
+                    </div>
+
+                    <div class="bg-orange-50 p-6 rounded-xl border border-orange-100">
+                        <div class="text-orange-600 text-sm font-bold uppercase tracking-wide">Network Status</div>
+                        <div class="flex items-center mt-2">
+                            <span class="text-2xl font-bold text-gray-800 mr-2">Online</span>
+                            <span class="relative flex h-3 w-3">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                            </span>
+                        </div>
+                        <div class="text-gray-500 text-sm mt-1">Block Time: ~60 Seconds</div>
+                    </div>
+                    
+                    <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                        <div class="text-blue-600 text-sm font-bold uppercase tracking-wide">Transactions</div>
+                        <div class="text-2xl font-bold text-gray-800 mt-2" id="tx-count">0</div>
+                        <div class="text-gray-500 text-sm mt-1">Simulated On-Chain</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INTERACTIVE EDUCATION: FEES -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start py-8">
+            <div class="order-2 lg:order-1 flex flex-col">
+                <div class="chart-container">
+                    <canvas id="feeChart"></canvas>
+                </div>
+                <p class="text-center text-xs text-gray-400 mt-4">* Fee comparison based on average industry rates for a $100 transaction.</p>
+            </div>
+
+            <div class="order-1 lg:order-2 space-y-6">
+                <h2 class="text-3xl font-bold text-gray-900">Why ReddCoin? <span class="text-red-600">Keep Your Money.</span></h2>
+                <p class="text-gray-600">
+                    Traditional payment processors and even older cryptocurrencies like Bitcoin can eat up your funds with fees. 
+                    ReddCoin is designed for micro-transactions (tipping 5 cents, sending $1). 
+                </p>
+                
+                <div class="bg-white p-6 rounded-xl border-l-4 border-red-500 shadow-sm">
+                    <h4 class="font-bold text-gray-800 text-lg mb-4">Interactive Fee Calculator</h4>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Simulate Sending Amount: <span id="amount-display" class="font-bold text-red-600">$100.00</span></label>
+                    <input type="range" min="1" max="1000" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" id="fee-slider">
+                    
+                    <div class="mt-6 space-y-3">
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span class="text-gray-600">PayPal Cost (2.9% + $0.30)</span>
+                            <span class="font-mono font-bold text-red-500" id="cost-paypal">-$3.20</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span class="text-gray-600">Bitcoin Cost (Avg Network Fee)</span>
+                            <span class="font-mono font-bold text-orange-500" id="cost-btc">-$2.50</span> <!-- Variable, strictly illustrative -->
+                        </div>
+                        <div class="flex justify-between items-center bg-green-50 p-2 rounded">
+                            <span class="text-gray-800 font-bold">ReddCoin Cost</span>
+                            <span class="font-mono font-bold text-green-600">FREE*</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">*ReddCoin transactions are typically fractions of a penny.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- UNLOCKABLE CARDS (Learning Path) -->
+        <section id="learning-path">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-900">Your ReddHead Journey</h2>
+                <p class="text-gray-500 max-w-2xl mx-auto mt-2">Keep clicking and earning to unlock the secrets of the Social Currency.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card 1: Unlocked -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="bg-red-500 h-2"></div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-lg text-gray-900">1. What is RDD?</h3>
+                            <span class="text-green-500 text-xl">✓</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">
+                            ReddCoin is a cryptocurrency like Bitcoin, but built specifically for social media. It allows you to "tip" content creators instantly, globally, and with zero middlemen.
+                        </p>
+                        <div class="bg-gray-50 p-3 rounded text-xs text-gray-500 italic">
+                            "Like a 'Like' button, but with real value."
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Locked initially -->
+                <div id="card-2" class="bg-gray-50 rounded-xl shadow-none border border-gray-200 overflow-hidden opacity-75 relative">
+                    <div class="absolute inset-0 bg-gray-100/50 backdrop-blur-[1px] flex items-center justify-center z-10 flex-col" id="lock-2">
+                        <span class="text-2xl">🔒</span>
+                        <span class="text-xs font-bold text-gray-500 mt-2">Earn 50 RDD to Unlock</span>
+                    </div>
+                    <div class="bg-orange-500 h-2"></div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-lg text-gray-900">2. Proof of Stake Velocity</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Bitcoin uses massive electricity (Mining). ReddCoin uses <strong>PoSV</strong>. You secure the network just by holding coins in your wallet and keeping it active.
+                        </p>
+                        <div class="bg-orange-50 p-3 rounded text-xs text-orange-800 font-semibold">
+                            Eco-Friendly & Sustainable
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Locked initially -->
+                <div id="card-3" class="bg-gray-50 rounded-xl shadow-none border border-gray-200 overflow-hidden opacity-75 relative">
+                    <div class="absolute inset-0 bg-gray-100/50 backdrop-blur-[1px] flex items-center justify-center z-10 flex-col" id="lock-3">
+                        <span class="text-2xl">🔒</span>
+                        <span class="text-xs font-bold text-gray-500 mt-2">Earn 100 RDD to Unlock</span>
+                    </div>
+                    <div class="bg-blue-500 h-2"></div>
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-lg text-gray-900">3. True Privacy</h3>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">
+                            We don't sell your data. We don't serve ads. ReddCoin is a volunteer-run project. Your financial freedom is the priority.
+                        </p>
+                        <div class="bg-blue-50 p-3 rounded text-xs text-blue-800 font-semibold">
+                            By the People, For the People
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA / FOOTER -->
+        <footer class="bg-gray-900 rounded-3xl text-white p-8 md:p-12 text-center mt-12 mb-8">
+            <h2 class="text-3xl font-bold mb-4">Ready to get Real RDD?</h2>
+            <p class="text-gray-400 mb-8 max-w-xl mx-auto">
+                This is a simulation. To own real ReddCoin, download the official ReddCoin Core wallet or mobile app. Join thousands of ReddHeads today.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full transition-all shadow-lg transform hover:-translate-y-1">
+                    Download Wallet
+                </button>
+                <button class="bg-transparent border border-gray-600 hover:bg-gray-800 text-white font-bold py-3 px-8 rounded-full transition-all">
+                    Join Community
+                </button>
+            </div>
+            <p class="text-xs text-gray-600 mt-8">© 2024 ReddCoin Project. Open Source. Decentralized.</p>
+        </footer>
+
+    </main>
+
+    <!-- LOGIC SCRIPT -->
+    <script>
+        // --- STATE MANAGEMENT ---
+        const state = {
+            balance: 0.00,
+            transactionCount: 0,
+            earningsHistory: [], // Stores {time, amount}
+            labels: [], // Time labels for chart
+            startTime: Date.now(),
+            clickValue: 5.00, // Base RDD per click
+            streak: 0,
+            unlockedLevels: [true, false, false]
+        };
+
+        // --- DOM ELEMENTS ---
+        const balanceDisplay = document.getElementById('display-balance');
+        const navBalance = document.getElementById('nav-balance');
+        const txCountDisplay = document.getElementById('tx-count');
+        const claimBtn = document.getElementById('claim-btn');
+        const levelProgress = document.getElementById('level-progress');
+        const particleCanvas = document.getElementById('particleCanvas');
+        
+        // --- CHART CONFIGURATION ---
+        
+        // 1. Earnings Chart (Line)
+        const ctxEarnings = document.getElementById('earningsChart').getContext('2d');
+        const earningsChart = new Chart(ctxEarnings, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'RDD Accumulated',
+                    data: [],
+                    borderColor: '#E53E3E', // ReddCoin Red
+                    backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4, // Smooth curves
+                    fill: true,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#FFFFFF',
+                    pointBorderColor: '#E53E3E'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // Critical for container responsiveness
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y.toFixed(2) + ' RDD';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { display: false } // Hide time labels for cleanliness
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [5, 5], color: '#f0f0f0' }
+                    }
+                }
+            }
+        });
+
+        // 2. Fee Comparison Chart (Bar)
+        const ctxFees = document.getElementById('feeChart').getContext('2d');
+        const feeChart = new Chart(ctxFees, {
+            type: 'bar',
+            data: {
+                labels: ['ReddCoin', 'Bitcoin', 'PayPal/CC'],
+                datasets: [{
+                    label: 'Transaction Cost ($)',
+                    data: [0.001, 2.50, 3.20], // Initial values for $100
+                    backgroundColor: [
+                        '#48BB78', // Green for RDD (Cheap)
+                        '#ED8936', // Orange for BTC
+                        '#F56565'  // Red for PayPal (Expensive)
+                    ],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Horizontal bar chart for better label reading
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'Cost to Send $100' }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Fee Cost (USD)' }
+                    }
+                }
+            }
+        });
+
+        // --- CORE FUNCTIONS ---
+
+        function updateDisplay() {
+            // Update Text
+            const formattedBalance = state.balance.toFixed(2);
+            balanceDisplay.textContent = formattedBalance;
+            navBalance.textContent = formattedBalance + " RDD";
+            txCountDisplay.textContent = state.transactionCount;
+
+            // Update Level Progress (Gamification)
+            let progress = Math.min((state.balance / 100) * 100, 100);
+            levelProgress.style.width = `${progress}%`;
+
+            // Unlock Logic
+            if(state.balance >= 50 && !state.unlockedLevels[1]) {
+                unlockCard(2);
+            }
+            if(state.balance >= 100 && !state.unlockedLevels[2]) {
+                unlockCard(3);
+            }
+        }
+
+        function unlockCard(id) {
+            state.unlockedLevels[id-1] = true;
+            const card = document.getElementById(`card-${id}`);
+            const lock = document.getElementById(`lock-${id}`);
+            if(card && lock) {
+                card.classList.remove('opacity-75');
+                card.classList.add('fade-in');
+                card.classList.add('bg-white');
+                card.classList.remove('bg-gray-50');
+                lock.style.display = 'none';
+            }
+        }
+
+        function addDataPoint() {
+            const now = new Date();
+            const timeLabel = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+            
+            state.labels.push(timeLabel);
+            state.earningsHistory.push(state.balance);
+
+            // Keep chart clean (max 20 points)
+            if (state.labels.length > 20) {
+                state.labels.shift();
+                state.earningsHistory.shift();
+            }
+
+            earningsChart.data.labels = state.labels;
+            earningsChart.data.datasets[0].data = state.earningsHistory;
+            earningsChart.update('none'); // Update without full re-render for performance
+        }
+
+        // --- INTERACTION: CLAIM BUTTON ---
+        claimBtn.addEventListener('click', (e) => {
+            // Logic
+            const reward = state.clickValue + (Math.random() * 2); // Random variance
+            state.balance += reward;
+            state.transactionCount++;
+            
+            // Visuals
+            updateDisplay();
+            addDataPoint();
+            createParticles(e.clientX, e.clientY);
+            
+            // Button feedback
+            claimBtn.classList.remove('pulse-btn');
+            void claimBtn.offsetWidth; // Trigger reflow
+            claimBtn.classList.add('pulse-btn');
+        });
+
+        // --- INTERACTION: FEE SLIDER ---
+        const feeSlider = document.getElementById('fee-slider');
+        const amountDisplay = document.getElementById('amount-display');
+        const costPaypal = document.getElementById('cost-paypal');
+        const costBtc = document.getElementById('cost-btc');
+
+        feeSlider.addEventListener('input', (e) => {
+            const amount = parseFloat(e.target.value);
+            amountDisplay.textContent = `$${amount.toFixed(2)}`;
+
+            // Calculate Fees
+            const paypalFee = (amount * 0.029) + 0.30;
+            const btcFee = 2.50; // Static avg for simulation
+            const rddFee = 0.001; // Negligible
+
+            // Update Text
+            costPaypal.textContent = `-$${paypalFee.toFixed(2)}`;
+            costBtc.textContent = `-$${btcFee.toFixed(2)}`;
+
+            // Update Chart
+            feeChart.data.datasets[0].data = [rddFee, btcFee, paypalFee];
+            feeChart.options.plugins.title.text = `Cost to Send $${amount}`;
+            feeChart.update();
+        });
+
+        // --- PARTICLE SYSTEM (Canvas) ---
+        // Simple confetti effect without external libraries
+        const pCtx = particleCanvas.getContext('2d');
+        let particles = [];
+        
+        function resizeCanvas() {
+            particleCanvas.width = particleCanvas.parentElement.offsetWidth;
+            particleCanvas.height = particleCanvas.parentElement.offsetHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // Init
+
+        function createParticles(x, y) {
+            // Adjust x/y to be relative to canvas
+            const rect = particleCanvas.getBoundingClientRect();
+            const canvasX = x - rect.left;
+            const canvasY = y - rect.top;
+
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: canvasX,
+                    y: canvasY,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1,
+                    color: `hsl(${Math.random() * 40 + 10}, 100%, 50%)` // Red/Orange hues
+                });
+            }
+        }
+
+        function updateParticles() {
+            pCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+            
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                p.vy += 0.2; // Gravity
+
+                pCtx.globalAlpha = p.life;
+                pCtx.fillStyle = p.color;
+                pCtx.beginPath();
+                pCtx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                pCtx.fill();
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+            requestAnimationFrame(updateParticles);
+        }
+        updateParticles();
+
+        // --- NAVIGATION HELPER ---
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if(el) el.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- INIT ---
+        addDataPoint(); // Initial point
+    </script>
+</body>
+</html>
